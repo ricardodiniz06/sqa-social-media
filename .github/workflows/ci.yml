@@ -21,7 +21,7 @@ jobs:
           cache: maven
 
       - name: Run Backend Tests
-        run: mvn -B test
+        run: mvn -B --no-transfer-progress test
         working-directory: ./api
 
   frontend-tests:
@@ -58,35 +58,43 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: maven
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './client/package-lock.json'
+
+      - name: Pre-warm Maven dependencies
+        run: mvn -B --no-transfer-progress dependency:go-offline -q
+        working-directory: ./api
 
       - name: Start API
         run: |
-          mvn -B spring-boot:run -Dspring-boot.run.profiles=test &
-          echo "Waiting for API on port 8080..."
-          for i in $(seq 1 60); do
-            curl -sf http://127.0.0.1:8080/actuator/health > /dev/null 2>&1 && echo "API ready!" && break
-            curl -sf http://127.0.0.1:8080/auth/signin -X POST -H "Content-Type: application/json" -d '{}' > /dev/null 2>&1 && echo "API ready!" && break
-            echo "  attempt $i/60..."
-            sleep 3
-          done
+          mvn -B --no-transfer-progress spring-boot:run -Dspring-boot.run.profiles=test &
+          echo "Waiting for API on port 8080 (max 3 min)..."
+          timeout 180 bash -c \
+            'until curl -s http://127.0.0.1:8080/auth/signin -o /dev/null 2>&1; do
+               printf "."; sleep 4;
+             done'
+          echo ""
+          echo "API is ready!"
         working-directory: ./api
 
       - name: Start Client
         run: |
           npm ci
-          npm run build
-          npm start &
-          echo "Waiting for client on port 3000..."
-          for i in $(seq 1 30); do
-            curl -sf http://127.0.0.1:3000 > /dev/null 2>&1 && echo "Client ready!" && break
-            echo "  attempt $i/30..."
-            sleep 3
-          done
+          NEXT_PUBLIC_BASE_URL=http://127.0.0.1:8080 npm run build
+          NEXT_PUBLIC_BASE_URL=http://127.0.0.1:8080 npm start &
+          echo "Waiting for client on port 3000 (max 60s)..."
+          timeout 60 bash -c \
+            'until curl -s http://127.0.0.1:3000 -o /dev/null 2>&1; do
+               printf "."; sleep 3;
+             done'
+          echo ""
+          echo "Client is ready!"
         working-directory: ./client
 
       - name: Install Playwright Dependencies
