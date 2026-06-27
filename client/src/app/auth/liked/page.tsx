@@ -70,6 +70,21 @@ export default function LikedPosts() {
     }
   }
 
+  async function handleDislike(postId: number) {
+    if (!user) return;
+
+    try {
+      await postsService.toggleDislikePost({ postId, userId: user.id });
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId ? { ...post, disliked: !post.disliked } : post
+        )
+      );
+    } catch {
+      alert("Erro ao dar dislike no post. Tente novamente.");
+    }
+  }
+
   if (isLoadingAuth) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--background)" }}>
@@ -154,6 +169,7 @@ export default function LikedPosts() {
                   post={post}
                   isAuthenticated={true}
                   onLike={handleLike}
+                  onDislike={handleDislike}
                 />
               ))}
             </div>

@@ -28,12 +28,8 @@ public class PostService {
       StringBuilder url = new StringBuilder("https://dummyjson.com/posts");
       List<String> params = new ArrayList<>();
       
-      if (limit != null) {
-        params.add("limit=" + limit);
-      }
-      if (skip != null) {
-        params.add("skip=" + skip);
-      }
+      if (limit != null) params.add("limit=" + limit);
+      if (skip != null) params.add("skip=" + skip);
 
       if (!params.isEmpty()) {
         url.append("?").append(String.join("&", params));
@@ -43,11 +39,14 @@ public class PostService {
       JsonNode rootNode = objectMapper.readTree(response);
 
       Set<Long> likedPostIds = new HashSet<>();
+      Set<Long> dislikedPostIds = new HashSet<>();
+
       if (userId != null) {
-        likedPostIds = reactionRepository.findByUserId(userId)
-          .stream()
-          .map(UserPostReaction::getPostId)
-          .collect(Collectors.toSet());
+        likedPostIds = reactionRepository.findByUserIdAndReactionType(userId, "like")
+          .stream().map(UserPostReaction::getPostId).collect(Collectors.toSet());
+
+        dislikedPostIds = reactionRepository.findByUserIdAndReactionType(userId, "dislike")
+          .stream().map(UserPostReaction::getPostId).collect(Collectors.toSet());
       }
 
       List<Map<String, Object>> posts = new ArrayList<>();
@@ -61,6 +60,16 @@ public class PostService {
         post.put("title", postNode.get("title").asText());
         post.put("body", postNode.get("body").asText());
         post.put("liked", likedPostIds.contains(postId));
+        post.put("disliked", dislikedPostIds.contains(postId));
+
+        // Reactions counts from DummyJSON
+        if (postNode.has("reactions")) {
+          JsonNode reactionsNode = postNode.get("reactions");
+          Map<String, Object> reactions = new HashMap<>();
+          reactions.put("likes", reactionsNode.has("likes") ? reactionsNode.get("likes").asInt() : 0);
+          reactions.put("dislikes", reactionsNode.has("dislikes") ? reactionsNode.get("dislikes").asInt() : 0);
+          post.put("reactions", reactions);
+        }
         
         posts.add(post);
       }
@@ -83,17 +92,15 @@ public class PostService {
       if (limit == null) limit = 5;
       if (skip == null) skip = 0;
 
-      List<UserPostReaction> allLikes = reactionRepository.findByUserId(userId);
+      List<UserPostReaction> allLikes = reactionRepository.findByUserIdAndReactionType(userId, "like");
       
       List<Long> likedPostIds = allLikes.stream()
         .map(UserPostReaction::getPostId)
         .collect(Collectors.toList());
 
       int total = likedPostIds.size();
-      
       int fromIndex = Math.min(skip, total);
       int toIndex = Math.min(skip + limit, total);
-      
       List<Long> paginatedIds = likedPostIds.subList(fromIndex, toIndex);
 
       List<Map<String, Object>> posts = new ArrayList<>();
@@ -108,6 +115,7 @@ public class PostService {
         post.put("title", postNode.get("title").asText());
         post.put("body", postNode.get("body").asText());
         post.put("liked", true);
+        post.put("disliked", false);
         
         posts.add(post);
       }
@@ -126,16 +134,22 @@ public class PostService {
   }
 
   public Map<String, Object> toggleLike(Long postId, Long userId) {
-    Optional<UserPostReaction> existing = reactionRepository.findByUserIdAndPostId(userId, postId);
-    
+    Optional<UserPostReaction> existingDislike =
+        reactionRepository.findByUserIdAndPostIdAndReactionType(userId, postId, "dislike");
+    existingDislike.ifPresent(reactionRepository::delete);
+
+    Optional<UserPostReaction> existingLike =
+        reactionRepository.findByUserIdAndPostIdAndReactionType(userId, postId, "like");
+
     boolean liked;
-    if (existing.isPresent()) {
-      reactionRepository.delete(existing.get());
+    if (existingLike.isPresent()) {
+      reactionRepository.delete(existingLike.get());
       liked = false;
     } else {
       UserPostReaction reaction = new UserPostReaction();
       reaction.setUserId(userId);
       reaction.setPostId(postId);
+      reaction.setReactionType("like");
       reactionRepository.save(reaction);
       liked = true;
     }
@@ -143,6 +157,36 @@ public class PostService {
     Map<String, Object> result = new HashMap<>();
     result.put("postId", postId);
     result.put("liked", liked);
+    result.put("disliked", false);
+    
+    return result;
+  }
+
+  public Map<String, Object> toggleDislike(Long postId, Long userId) {
+    Optional<UserPostReaction> existingLike =
+        reactionRepository.findByUserIdAndPostIdAndReactionType(userId, postId, "like");
+    existingLike.ifPresent(reactionRepository::delete);
+
+    Optional<UserPostReaction> existingDislike =
+        reactionRepository.findByUserIdAndPostIdAndReactionType(userId, postId, "dislike");
+
+    boolean disliked;
+    if (existingDislike.isPresent()) {
+      reactionRepository.delete(existingDislike.get());
+      disliked = false;
+    } else {
+      UserPostReaction reaction = new UserPostReaction();
+      reaction.setUserId(userId);
+      reaction.setPostId(postId);
+      reaction.setReactionType("dislike");
+      reactionRepository.save(reaction);
+      disliked = true;
+    }
+
+    Map<String, Object> result = new HashMap<>();
+    result.put("postId", postId);
+    result.put("liked", false);
+    result.put("disliked", disliked);
     
     return result;
   }

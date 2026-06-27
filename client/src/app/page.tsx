@@ -57,7 +57,9 @@ export default function Home() {
 
     setPosts((prevPosts) =>
       prevPosts.map((post) =>
-        post.id === postId ? { ...post, liked: !post.liked } : post
+        post.id === postId
+          ? { ...post, liked: !post.liked, disliked: post.liked ? post.disliked : false }
+          : post
       )
     );
 
@@ -70,6 +72,32 @@ export default function Home() {
         )
       );
       alert("Erro ao curtir post. Tente novamente.");
+    }
+  }
+
+  async function handleDislike(postId: number) {
+    if (!user) {
+      alert("Você precisa estar autenticado para reagir a posts!");
+      return;
+    }
+
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? { ...post, disliked: !post.disliked, liked: post.disliked ? post.liked : false }
+          : post
+      )
+    );
+
+    try {
+      await postsService.toggleDislikePost({ postId, userId: user.id });
+    } catch {
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId ? { ...post, disliked: !post.disliked } : post
+        )
+      );
+      alert("Erro ao dar dislike no post. Tente novamente.");
     }
   }
 
@@ -132,6 +160,7 @@ export default function Home() {
                   post={post}
                   isAuthenticated={isAuthenticated}
                   onLike={handleLike}
+                  onDislike={handleDislike}
                 />
               ))}
             </div>

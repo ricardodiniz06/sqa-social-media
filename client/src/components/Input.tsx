@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -6,10 +6,14 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export default function Input({ label, error, ...props }: InputProps) {
+  const generatedId = useId();
+  const inputId = props.id || generatedId;
+
   return (
     <div style={{ marginBottom: "1rem" }}>
       {label && (
         <label
+          htmlFor={inputId}
           style={{
             display: "block",
             marginBottom: "0.5rem",
@@ -21,6 +25,7 @@ export default function Input({ label, error, ...props }: InputProps) {
         </label>
       )}
       <input
+        id={inputId}
         {...props}
         style={{
           width: "100%",

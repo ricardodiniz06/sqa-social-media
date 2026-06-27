@@ -42,8 +42,16 @@ async function toggleLikePost(params: LikePostParams): Promise<void> {
   });
 }
 
+async function toggleDislikePost(params: LikePostParams): Promise<void> {
+  const { postId, userId } = params;
+  await api.post(`/posts/${postId}/dislike`, null, {
+    params: { userId },
+  });
+}
+
 export const postsService = {
   getPosts,
   getLikedPosts,
   toggleLikePost,
+  toggleDislikePost,
 };

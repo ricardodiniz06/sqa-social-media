@@ -14,6 +14,9 @@ public class UserPostReaction {
   private Long userId;
   private Long postId;
 
+  /** "like" ou "dislike" */
+  private String reactionType = "like";
+
   public Long getId() {
     return id;
   }
@@ -36,6 +39,14 @@ public class UserPostReaction {
 
   public void setPostId(Long postId) {
     this.postId = postId;
+  }
+
+  public String getReactionType() {
+    return reactionType;
+  }
+
+  public void setReactionType(String reactionType) {
+    this.reactionType = reactionType;
   }
 
 }
