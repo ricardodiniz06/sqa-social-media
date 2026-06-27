@@ -12,11 +12,11 @@ test.describe('Fluxo de Cadastro (Signup)', () => {
 
     await page.goto('/signup');
 
-    await page.getByRole('textbox', { name: /e-mail/i }).fill(email);
+    await page.getByRole('textbox', { name: /email/i }).fill(email);
     await page.getByLabel(/^Senha$/i).fill('Forte@123');
     await page.getByLabel(/Confirmar Senha/i).fill('Forte@123');
 
-    await page.getByRole('button', { name: /criar conta/i }).click();
+    await page.getByRole('main').getByRole('button', { name: /criar conta/i }).click();
 
     await expect(page).toHaveURL('/', { timeout: 10_000 });
   });
@@ -26,10 +26,10 @@ test.describe('Fluxo de Cadastro (Signup)', () => {
     const senhaComExclamacao = 'Forte!123';
 
     await page.goto('/signup');
-    await page.getByRole('textbox', { name: /e-mail/i }).fill(email);
+    await page.getByRole('textbox', { name: /email/i }).fill(email);
     await page.getByLabel(/^Senha$/i).fill(senhaComExclamacao);
     await page.getByLabel(/Confirmar Senha/i).fill(senhaComExclamacao);
-    await page.getByRole('button', { name: /criar conta/i }).click();
+    await page.getByRole('main').getByRole('button', { name: /criar conta/i }).click();
 
     await expect(page.getByText(/caractere especial/i)).toBeVisible({ timeout: 8_000 });
     await expect(page).toHaveURL(/signup/);
@@ -45,11 +45,11 @@ test.describe('Fluxo de Cadastro (Signup)', () => {
     expect(resp.ok()).toBeTruthy();
 
     await page.goto('/signup');
-    await page.getByRole('textbox', { name: /e-mail/i }).fill(email);
+    await page.getByRole('textbox', { name: /email/i }).fill(email);
     await page.getByLabel(/^Senha$/i).fill('Forte@123');
     await page.getByLabel(/Confirmar Senha/i).fill('Forte@123');
     
-    await page.getByRole('button', { name: /criar conta/i }).click();
+    await page.getByRole('main').getByRole('button', { name: /criar conta/i }).click();
 
     await expect(page.getByText(/e-mail já cadastrado/i)).toBeVisible({ timeout: 8_000 });
   });
@@ -66,9 +66,9 @@ test.describe('Fluxo de Login (Signin)', () => {
     });
 
     await page.goto('/signin');
-    await page.getByRole('textbox', { name: /e-mail/i }).fill(email);
+    await page.getByRole('textbox', { name: /email/i }).fill(email);
     await page.getByLabel(/senha/i).fill('Forte@123');
-    await page.getByRole('button', { name: /entrar/i }).click();
+    await page.getByRole('main').getByRole('button', { name: /entrar/i }).click();
 
     await expect(page).toHaveURL('/', { timeout: 10_000 });
   });
@@ -114,9 +114,9 @@ test.describe('Reações: Like e Dislike (Atividade 6)', () => {
     });
 
     await page.goto('/signin');
-    await page.getByRole('textbox', { name: /e-mail/i }).fill(email);
+    await page.getByRole('textbox', { name: /email/i }).fill(email);
     await page.getByLabel(/senha/i).fill('Forte@123');
-    await page.getByRole('button', { name: /entrar/i }).click();
+    await page.getByRole('main').getByRole('button', { name: /entrar/i }).click();
     await expect(page).toHaveURL('/', { timeout: 10_000 });
 
     const likeBtn = page.getByRole('button', { name: /curtir/i }).first();
