@@ -31,7 +31,9 @@ test.describe('Fluxo de Cadastro (Signup)', () => {
     await page.getByLabel(/Confirmar Senha/i).fill(senhaComExclamacao);
     await page.getByRole('main').getByRole('button', { name: /criar conta/i }).click();
 
-    await expect(page.getByText(/A senha deve conter:.*caractere especial/i)).toBeVisible({ timeout: 8_000 });
+    await expect(
+      page.locator('p').filter({ hasText: /^A senha deve conter: um caractere especial$/ })
+    ).toBeVisible({ timeout: 8_000 });
     await expect(page).toHaveURL(/signup/);
   });
 
