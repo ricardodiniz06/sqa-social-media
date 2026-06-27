@@ -67,19 +67,10 @@ jobs:
           cache: 'npm'
           cache-dependency-path: './client/package-lock.json'
 
-      - name: Pre-warm Maven dependencies
-        run: mvn -B --no-transfer-progress dependency:go-offline -q
-        working-directory: ./api
-
       - name: Start API
         run: |
           mvn -B --no-transfer-progress spring-boot:run -Dspring-boot.run.profiles=test &
-          echo "Waiting for API on port 8080 (max 3 min)..."
-          timeout 180 bash -c \
-            'until curl -s http://127.0.0.1:8080/auth/signin -o /dev/null 2>&1; do
-               printf "."; sleep 4;
-             done'
-          echo ""
+          npx wait-on -t 120000 tcp:127.0.0.1:8080
           echo "API is ready!"
         working-directory: ./api
 
@@ -88,12 +79,7 @@ jobs:
           npm ci
           NEXT_PUBLIC_BASE_URL=http://127.0.0.1:8080 npm run build
           NEXT_PUBLIC_BASE_URL=http://127.0.0.1:8080 npm start &
-          echo "Waiting for client on port 3000 (max 60s)..."
-          timeout 60 bash -c \
-            'until curl -s http://127.0.0.1:3000 -o /dev/null 2>&1; do
-               printf "."; sleep 3;
-             done'
-          echo ""
+          npx wait-on -t 60000 tcp:127.0.0.1:3000
           echo "Client is ready!"
         working-directory: ./client
 
