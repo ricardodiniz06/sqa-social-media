@@ -67,7 +67,13 @@ jobs:
       - name: Start API
         run: |
           mvn -B spring-boot:run -Dspring-boot.run.profiles=test &
-          sleep 15
+          echo "Waiting for API on port 8080..."
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:8080/actuator/health > /dev/null 2>&1 && echo "API ready!" && break
+            curl -sf http://127.0.0.1:8080/auth/signin -X POST -H "Content-Type: application/json" -d '{}' > /dev/null 2>&1 && echo "API ready!" && break
+            echo "  attempt $i/60..."
+            sleep 3
+          done
         working-directory: ./api
 
       - name: Start Client
@@ -75,7 +81,12 @@ jobs:
           npm ci
           npm run build
           npm start &
-          sleep 10
+          echo "Waiting for client on port 3000..."
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:3000 > /dev/null 2>&1 && echo "Client ready!" && break
+            echo "  attempt $i/30..."
+            sleep 3
+          done
         working-directory: ./client
 
       - name: Install Playwright Dependencies

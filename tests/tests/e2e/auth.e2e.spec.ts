@@ -77,7 +77,7 @@ test.describe('Fluxo de Login (Signin)', () => {
     await page.goto('/signin');
     await page.getByPlaceholder('seu@email.com').fill('naoexiste@email.com');
     await page.getByPlaceholder('••••••••').fill('SenhaErrada@1');
-    await page.getByRole('button', { name: /entrar/i }).click();
+    await page.getByRole('main').getByRole('button', { name: /entrar/i }).click();
 
     await expect(page.getByText(/credenciais inválidas/i)).toBeVisible({ timeout: 8_000 });
   });
